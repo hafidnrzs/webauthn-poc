@@ -1,0 +1,1503 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#171A1E" />
+    <meta name="color-scheme" content="dark" />
+    <title>Biometrik PoC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --desk: #171a1e;
+        --chassis: #3d4248;
+        --recess: #2a2e33;
+        --groove: #33373d;
+        --edge: #585e65;
+        --bone: #e6e2d9;
+        --putty: #c6c2b8;
+        --silk: #bcc1c6;
+        --ink: #171a1e;
+        --orange: #ff6a00;
+        --amber: #ffc24d;
+        --lcd-ink: #3a2600;
+        --lcd-dim: #6a480e;
+        --led-ok: #5bd18b;
+        --led-warn: #ffc24d;
+        --led-bad: #ff5a4f;
+        --bad-text: #ff9c94;
+
+        --mono: "Martian Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --sans:
+          "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        color-scheme: dark;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        min-height: 100vh;
+        background:
+          radial-gradient(120% 60% at 50% -10%, #22262b 0%, transparent 60%),
+          var(--desk);
+        color: var(--bone);
+        font: 400 16px/1.5 var(--sans);
+        font-variation-settings: "wdth" 100;
+        -webkit-font-smoothing: antialiased;
+        padding: env(safe-area-inset-top, 0px) 0
+          env(safe-area-inset-bottom, 0px);
+        caret-color: var(--amber);
+      }
+      ::selection {
+        background: var(--amber);
+        color: var(--lcd-ink);
+      }
+      :focus-visible {
+        outline: 2px solid var(--amber);
+        outline-offset: 3px;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      svg.i {
+        width: 18px;
+        height: 18px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      /* ---------- Sasis ---------- */
+      .chassis {
+        position: relative;
+        max-width: 460px;
+        margin: 12px auto 28px;
+        padding: 14px 14px 18px;
+        background: var(--chassis);
+        border-radius: 22px;
+        box-shadow:
+          0 24px 48px rgba(0, 0, 0, 0.55),
+          0 4px 10px rgba(0, 0, 0, 0.4);
+      }
+      @media (max-width: 480px) {
+        .chassis {
+          margin: 8px 8px 20px;
+          border-radius: 18px;
+        }
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 4px 8px 12px 14px;
+      }
+      .unit {
+        margin: 0;
+        font: 600 13px/1 var(--mono);
+        font-variation-settings: "wdth" 87.5;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: var(--bone);
+      }
+      .unit small {
+        display: block;
+        margin-top: 6px;
+        font: 400 13px/1.3 var(--sans);
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--silk);
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 36px;
+        padding: 0 12px;
+        white-space: nowrap;
+        background: var(--recess);
+        border: 1px solid var(--edge);
+        border-radius: 999px;
+        color: var(--bone);
+        font: 500 11px/1 var(--mono);
+        font-variation-settings: "wdth" 87.5;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .led {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex: none;
+        background: #4a4f55;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+      }
+      [data-led] .led {
+        box-shadow:
+          inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+          inset 1px 1px 1px rgba(255, 255, 255, 0.55);
+      }
+      [data-led="ok"] .led {
+        background: var(--led-ok);
+      }
+      [data-led="warn"] .led {
+        background: var(--led-warn);
+      }
+      [data-led="bad"] .led {
+        background: var(--led-bad);
+      }
+
+      /* ---------- Layar LCD ---------- */
+      .bezel {
+        padding: 10px;
+        background: #0e1013;
+        border-radius: 14px;
+        box-shadow:
+          inset 0 2px 6px rgba(0, 0, 0, 0.8),
+          0 1px 0 rgba(255, 255, 255, 0.06);
+      }
+      .lcd {
+        position: relative;
+        padding: 14px 14px 12px;
+        display: flex;
+        flex-direction: column;
+        background: var(--amber);
+        color: var(--lcd-ink);
+        border-radius: 6px;
+        box-shadow: inset 0 0 0 1px rgba(58, 38, 0, 0.25);
+      }
+      .lcd-title {
+        margin: 2px 0 6px;
+        font: 600 22px/1.25 var(--mono);
+        font-variation-settings: "wdth" 100;
+        letter-spacing: 0.01em;
+        text-wrap: balance;
+        overflow-wrap: anywhere;
+      }
+      .lcd-desc {
+        margin: 0 0 16px;
+        font: 500 15px/1.45 var(--sans);
+        max-width: 38ch;
+        text-wrap: pretty;
+      }
+
+      .readout {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin: 4px 0 14px;
+        border-top: 1.5px solid var(--lcd-ink);
+        border-bottom: 1.5px solid var(--lcd-ink);
+      }
+      .readout div {
+        min-width: 0;
+        padding: 7px 8px;
+      }
+      .readout div:first-child {
+        padding-left: 0;
+      }
+      .readout div + div {
+        border-left: 1px solid rgba(58, 38, 0, 0.4);
+      }
+      .readout dt {
+        font: 600 11px/1.1 var(--mono);
+        font-variation-settings: "wdth" 75;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--lcd-dim);
+      }
+      .readout dd {
+        margin: 4px 0 0;
+        font: 700 14px/1.2 var(--mono);
+        font-variation-settings: "wdth" 87.5;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ruler {
+        margin: 0;
+        list-style: none;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+      .ruler li {
+        min-width: 0;
+      }
+      .seg {
+        position: relative;
+        height: 10px;
+        border: 1.5px solid var(--lcd-ink);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .seg::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--lcd-ink);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.32s var(--ease);
+        transition-delay: calc(var(--i, 0) * 90ms);
+      }
+      .ruler li[data-s="done"] .seg::before {
+        transform: scaleX(1);
+      }
+      .ruler li[data-s="active"] .seg::before {
+        transform: scaleX(1);
+        background: repeating-linear-gradient(
+          90deg,
+          var(--lcd-ink) 0 6px,
+          transparent 6px 10px
+        );
+        background-size: 20px 100%;
+        animation: roll 0.5s linear infinite;
+      }
+      .ruler li[data-s="fail"] .seg {
+        border-style: dashed;
+      }
+      .ruler li[data-s="fail"] .seg::before {
+        transform: scaleX(1);
+        background: repeating-linear-gradient(
+          135deg,
+          var(--lcd-ink) 0 2px,
+          transparent 2px 6px
+        );
+      }
+      @keyframes roll {
+        to {
+          background-position: 20px 0;
+        }
+      }
+      .tick {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 3px;
+      }
+      .tick span {
+        width: 1.5px;
+        height: 2px;
+        background: var(--lcd-dim);
+      }
+      .tick span:nth-child(3) {
+        height: 4px;
+      }
+      .seg-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        font: 700 11px/1.1 var(--mono);
+        font-variation-settings: "wdth" 75;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .seg-label svg.i {
+        width: 12px;
+        height: 12px;
+        stroke-width: 2.6;
+      }
+      .seg-label .mk {
+        display: none;
+      }
+      .ruler li[data-s="done"] .mk-done,
+      .ruler li[data-s="fail"] .mk-fail {
+        display: inline;
+      }
+      .seg-sub {
+        display: block;
+        margin-top: 2px;
+        font: 500 12px/1.25 var(--sans);
+        color: var(--lcd-dim);
+      }
+      .ruler li[data-s="active"] .seg-sub,
+      .ruler li[data-s="fail"] .seg-sub {
+        color: var(--lcd-ink);
+        font-weight: 700;
+      }
+
+      /* ---------- Modul langkah ---------- */
+      .modules {
+        margin-top: 16px;
+      }
+      .module {
+        padding: 18px 8px 20px;
+        border-top: 1px solid var(--groove);
+        box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.04);
+      }
+      #signedOut .module:first-child,
+      #signedIn {
+        border-top: 0;
+        box-shadow: none;
+        padding-top: 6px;
+      }
+      .module-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .cap {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        flex: none;
+        border-radius: 8px;
+        background: var(--bone);
+        color: var(--ink);
+        font: 700 15px/1 var(--mono);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      }
+      .module h2 {
+        margin: 0;
+        font: 700 20px/1.3 var(--sans);
+        font-variation-settings: "wdth" 92;
+        letter-spacing: -0.005em;
+      }
+      .module h2 small {
+        display: block;
+        margin-top: 1px;
+        font: 500 13px/1.35 var(--sans);
+        color: var(--silk);
+      }
+      .ok-mark {
+        width: 34px;
+        height: 24px;
+        color: var(--led-ok);
+        stroke-width: 2.4;
+      }
+      .module p {
+        margin: 0 0 14px 46px;
+        color: var(--silk);
+        font-size: 15px;
+        max-width: 42ch;
+      }
+      .module p b {
+        color: var(--bone);
+        font-weight: 600;
+      }
+      .module .body {
+        margin-left: 46px;
+      }
+      @media (max-width: 360px) {
+        .chassis {
+          padding: 12px 10px 16px;
+        }
+        .topbar {
+          padding: 4px 4px 12px 10px;
+        }
+        .unit small {
+          font-size: 12px;
+        }
+        .lcd {
+          padding: 12px 11px 11px;
+        }
+        .lcd-title {
+          font-size: 20px;
+        }
+        .readout dd {
+          font-size: 13px;
+        }
+        .seg-label {
+          letter-spacing: 0.01em;
+        }
+        .module p,
+        .module .body {
+          margin-left: 0;
+        }
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 6px;
+        font: 600 11px/1 var(--mono);
+        font-variation-settings: "wdth" 87.5;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--silk);
+      }
+      input {
+        width: 100%;
+        min-height: 48px;
+        margin: 0 0 12px;
+        padding: 12px 14px;
+        font: 500 16px/1.2 var(--sans);
+        color: var(--bone);
+        background: var(--recess);
+        border: 1px solid var(--edge);
+        border-radius: 8px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
+        transition:
+          border-color 0.2s var(--ease),
+          box-shadow 0.2s var(--ease);
+      }
+      input::placeholder {
+        color: #9aa0a7;
+      }
+      input:focus {
+        outline: none;
+        border-color: var(--amber);
+        box-shadow:
+          inset 0 2px 4px rgba(0, 0, 0, 0.45),
+          0 0 0 3px rgba(255, 194, 77, 0.18);
+      }
+      input[aria-invalid="true"] {
+        border-color: var(--led-bad);
+      }
+
+      /* ---------- Keycap ---------- */
+      .key {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        min-height: 56px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--bone);
+        color: var(--ink);
+        font: 700 13px/1.2 var(--mono);
+        font-variation-settings: "wdth" 75;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-align: left;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
+        transition:
+          transform 0.08s ease-out,
+          box-shadow 0.08s ease-out,
+          filter 0.2s;
+      }
+      .key:hover {
+        filter: brightness(1.04);
+      }
+      .key:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      }
+      .key.next {
+        background: var(--orange);
+      }
+      .key.quiet {
+        background: #595f66;
+        color: var(--bone);
+      }
+      .key:disabled {
+        cursor: progress;
+        filter: saturate(0.6) brightness(0.8);
+      }
+      .key[data-running] {
+        filter: none;
+      }
+      .key .led {
+        width: 7px;
+        height: 7px;
+        background: rgba(0, 0, 0, 0.22);
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.35);
+      }
+      .key[data-running] .led {
+        background: var(--ink);
+        animation: blink 0.9s steps(2, jump-none) infinite;
+      }
+      .key-end {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0.25;
+        }
+      }
+
+      /* ---------- Hasil ---------- */
+      .proof {
+        list-style: none;
+        margin: 0 0 16px;
+        padding: 0;
+      }
+      .proof li {
+        display: grid;
+        grid-template-columns: 22px 1fr;
+        gap: 10px;
+        padding: 10px 0;
+        border-top: 1px solid var(--groove);
+        font-size: 15px;
+      }
+      .proof li:first-child {
+        border-top: 0;
+        padding-top: 2px;
+      }
+      .proof svg.i {
+        margin-top: 2px;
+        color: var(--led-ok);
+      }
+      .proof li.no svg.i {
+        color: var(--bad-text);
+      }
+      .proof small {
+        display: block;
+        color: var(--silk);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      /* ---------- Panel servis ---------- */
+      .service {
+        max-width: 460px;
+        margin: 0 auto 32px;
+        padding: 0 8px;
+        scroll-margin-top: 12px;
+      }
+      .service summary {
+        border-top: 1px solid var(--edge);
+        border-bottom: 1px solid var(--edge);
+      }
+      .service[open] summary {
+        border-bottom-color: transparent;
+      }
+      @media (max-width: 480px) {
+        .service {
+          margin: 0 8px 28px;
+          padding: 0;
+        }
+      }
+      .service summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 52px;
+        padding: 10px 14px;
+        cursor: pointer;
+        list-style: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .service summary::-webkit-details-marker {
+        display: none;
+      }
+      .service summary .t-name {
+        display: block;
+        font: 600 12px/1.2 var(--mono);
+        font-variation-settings: "wdth" 87.5;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .service summary .t-sub {
+        display: block;
+        margin-top: 4px;
+        font: 400 13px/1.35 var(--sans);
+        color: var(--silk);
+      }
+      .service summary svg.i {
+        transition: transform 0.25s var(--ease);
+        color: var(--silk);
+      }
+      .service[open] summary svg.i {
+        transform: rotate(180deg);
+      }
+      .service-body {
+        padding: 4px 14px 16px;
+      }
+      .service h3 {
+        margin: 22px 0 8px;
+        font: 600 11px/1 var(--mono);
+        font-variation-settings: "wdth" 87.5;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--silk);
+      }
+      .service h3:first-child {
+        margin-top: 6px;
+      }
+      .checks {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .checks li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 0;
+        border-top: 1px solid var(--groove);
+        font-size: 14px;
+      }
+      .checks li:first-child {
+        border-top: 0;
+      }
+      .checks li span:nth-child(2) {
+        flex: 1;
+      }
+      .checks b {
+        font: 600 12px/1 var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .checks li[data-led="bad"] b {
+        color: var(--bad-text);
+      }
+
+      dl.kv {
+        margin: 0;
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 7px 14px;
+        font-size: 14px;
+      }
+      dl.kv dt {
+        color: var(--silk);
+      }
+      dl.kv dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+        font: 500 13px/1.45 var(--mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .empty {
+        margin: 0;
+        color: var(--silk);
+        font-size: 14px;
+      }
+
+      dl.terms {
+        margin: 0;
+        font-size: 14px;
+      }
+      dl.terms dt {
+        font-weight: 700;
+        margin-top: 10px;
+      }
+      dl.terms dt:first-child {
+        margin-top: 0;
+      }
+      dl.terms dd {
+        margin: 2px 0 0;
+        color: var(--silk);
+        max-width: 60ch;
+      }
+      dl.terms code {
+        font: 500 13px var(--mono);
+        color: var(--bone);
+        overflow-wrap: anywhere;
+      }
+
+      #log {
+        margin: 0;
+        padding: 12px;
+        max-height: 260px;
+        overflow: auto;
+        background: #111316;
+        border: 1px solid var(--groove);
+        border-radius: 8px;
+        color: #cfcac0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font: 12px/1.5 var(--mono);
+        scrollbar-color: var(--edge) transparent;
+        scrollbar-width: thin;
+      }
+      #log:empty::before {
+        content: "Belum ada catatan.";
+        color: var(--silk);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ruler li[data-s="active"] .seg::before {
+          animation: none;
+        }
+        .key[data-running] .led {
+          animation: none;
+        }
+        .seg::before {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="M5 12.5l4.5 4.5L19 7.5" />
+      </symbol>
+      <symbol id="i-x" viewBox="0 0 24 24">
+        <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+      </symbol>
+      <symbol id="i-ring" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="6.5" />
+      </symbol>
+      <symbol id="i-square" viewBox="0 0 24 24">
+        <rect x="6" y="6" width="12" height="12" rx="1" />
+      </symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h13M13 7l5 5-5 5" />
+      </symbol>
+      <symbol id="i-chev" viewBox="0 0 24 24">
+        <path d="M6 9.5l6 6 6-6" />
+      </symbol>
+    </svg>
+
+    <main class="chassis">
+      <header class="topbar">
+        <h1 class="unit">
+          Biometrik PoC<small>Login passkey tanpa kata sandi</small>
+        </h1>
+        <button
+          class="status-pill"
+          id="statusPill"
+          data-led="warn"
+          aria-controls="service"
+        >
+          <span class="led" aria-hidden="true"></span
+          ><span id="statusText">Memeriksa</span>
+        </button>
+      </header>
+
+      <div class="bezel">
+        <section
+          class="lcd"
+          id="lcd"
+          data-mode="idle"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <p class="lcd-title" id="title">Memeriksa perangkat…</p>
+          <p class="lcd-desc" id="desc">
+            Mengecek HTTPS, dukungan WebAuthn, dan sensor bawaan HP.
+          </p>
+          <dl class="readout">
+            <div>
+              <dt id="roL1">HTTPS</dt>
+              <dd id="ro1">–</dd>
+            </div>
+            <div>
+              <dt id="roL2">WebAuthn</dt>
+              <dd id="ro2">–</dd>
+            </div>
+            <div>
+              <dt id="roL3">Sensor</dt>
+              <dd id="ro3">–</dd>
+            </div>
+          </dl>
+          <ol class="ruler" id="ruler" aria-label="Tahapan"></ol>
+        </section>
+      </div>
+
+      <div class="modules">
+        <div id="signedOut">
+          <section class="module" aria-labelledby="h-reg">
+            <div class="module-head">
+              <span class="cap" aria-hidden="true">1</span>
+              <h2 id="h-reg">
+                Daftarkan HP ini<small>Cukup sekali per HP</small>
+              </h2>
+            </div>
+            <p>
+              Membuat <b>passkey</b>: kunci digital yang disimpan di HP ini dan
+              hanya bisa dibuka dengan sidik jari, wajah, atau kunci layarmu.
+            </p>
+            <div class="body">
+              <label class="field-label" for="username">Nama pengguna</label>
+              <input
+                id="username"
+                autocomplete="username webauthn"
+                autocapitalize="none"
+                spellcheck="false"
+                placeholder="contoh: john doe"
+              />
+              <button class="key" id="registerBtn">
+                <span>Daftarkan HP</span>
+                <span class="key-end">
+                  <span class="led" aria-hidden="true"></span>
+                  <svg class="i" aria-hidden="true"><use href="#i-ring" /></svg>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <section class="module" aria-labelledby="h-login">
+            <div class="module-head">
+              <span class="cap" aria-hidden="true">2</span>
+              <h2 id="h-login">
+                Masuk<small>Tanpa nama pengguna, tanpa kata sandi</small>
+              </h2>
+            </div>
+            <p>
+              Server mengirim tantangan acak, lalu HP menandatanganinya dengan
+              passkey setelah kamu verifikasi.
+            </p>
+            <div class="body">
+              <button class="key" id="loginBtn">
+                <span>Masuk dengan biometrik</span>
+                <span class="key-end">
+                  <span class="led" aria-hidden="true"></span>
+                  <svg class="i" aria-hidden="true">
+                    <use href="#i-arrow" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <section class="module" id="signedIn" aria-labelledby="who" hidden>
+          <div class="module-head">
+            <svg class="i ok-mark" aria-hidden="true">
+              <use href="#i-check" />
+            </svg>
+            <h2 id="who">Masuk</h2>
+          </div>
+          <div class="body">
+            <ul class="proof" id="proof"></ul>
+            <button class="key quiet" id="logoutBtn">
+              <span>Keluar</span>
+              <span class="key-end"
+                ><svg class="i" aria-hidden="true"><use href="#i-square" /></svg
+              ></span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <details class="service" id="service">
+      <summary>
+        <span class="t"
+          ><span class="t-name">Panel servis</span
+          ><span class="t-sub"
+            >Dukungan perangkat, detail teknis, arti istilah, log</span
+          ></span
+        >
+        <svg class="i" aria-hidden="true"><use href="#i-chev" /></svg>
+      </summary>
+      <div class="service-body">
+        <h3>Dukungan perangkat</h3>
+        <ul class="checks" id="checks"></ul>
+
+        <h3>Percobaan terakhir</h3>
+        <dl class="kv" id="details" hidden></dl>
+        <p class="empty" id="detailsEmpty">
+          Belum ada. Detail muncul setelah daftar atau masuk.
+        </p>
+
+        <h3>Arti istilah</h3>
+        <dl class="terms">
+          <dt>Passkey</dt>
+          <dd>
+            Pasangan kunci yang dibuat HP untuk situs ini. Kunci privat tetap di
+            HP; server hanya menyimpan kunci publik.
+          </dd>
+          <dt>Tantangan (challenge)</dt>
+          <dd>
+            Kode acak sekali pakai dari server. HP menandatanganinya supaya
+            server tahu jawabannya baru, bukan rekaman ulang.
+          </dd>
+          <dt>Verifikasi pengguna (UV)</dt>
+          <dd>
+            Tanda bahwa HP memeriksa pemiliknya: biometrik, PIN, atau pola.
+            Browser tidak memberi tahu cara yang dipakai.
+          </dd>
+          <dt>Sign count</dt>
+          <dd>
+            Penghitung dari HP yang naik setiap login. Kalau mundur, bisa jadi
+            tanda passkey disalin. Banyak HP selalu mengirim 0.
+          </dd>
+          <dt>RP ID</dt>
+          <dd>
+            Domain pemilik passkey. Passkey hanya berlaku di domain yang sama
+            persis, di sini <code id="rpid"></code>.
+          </dd>
+        </dl>
+
+        <h3>Log mentah</h3>
+        <pre id="log"></pre>
+      </div>
+    </details>
+
+    <script>
+      // ---------- base64url <-> ArrayBuffer ----------
+      const b64u = {
+        toBuf(s) {
+          s = s.replace(/-/g, "+").replace(/_/g, "/");
+          s += "=".repeat((4 - (s.length % 4)) % 4);
+          const bin = atob(s);
+          const out = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+          return out.buffer;
+        },
+        fromBuf(buf) {
+          if (!buf) return null;
+          const bytes = new Uint8Array(buf);
+          let s = "";
+          for (const b of bytes) s += String.fromCharCode(b);
+          return btoa(s)
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
+        },
+      };
+
+      // ---------- Tahapan tiap upacara ----------
+      const STEPS = {
+        register: [
+          {
+            who: "Server",
+            sub: "kirim tantangan",
+            title: "Minta tantangan",
+            desc: "Server membuat kode acak sekali pakai untuk pendaftaran ini.",
+          },
+          {
+            who: "HP",
+            sub: "buat passkey",
+            title: "Verifikasi di HP",
+            desc: "Sentuh sensor sidik jari atau lihat kamera. HP membuat passkey, dan kunci privatnya tidak pernah keluar dari HP.",
+          },
+          {
+            who: "Server",
+            sub: "simpan kunci",
+            title: "Simpan kunci publik",
+            desc: "Server memeriksa jawaban HP, lalu menyimpan kunci publik untuk akun ini.",
+          },
+        ],
+        login: [
+          {
+            who: "Server",
+            sub: "kirim tantangan",
+            title: "Minta tantangan",
+            desc: "Server membuat kode acak sekali pakai untuk login ini.",
+          },
+          {
+            who: "HP",
+            sub: "tanda tangani",
+            title: "Pilih passkey, lalu verifikasi",
+            desc: "HP menandatangani tantangan dengan kunci privat setelah kamu verifikasi.",
+          },
+          {
+            who: "Server",
+            sub: "cek tanda tangan",
+            title: "Cek tanda tangan",
+            desc: "Server mencocokkan tanda tangan dengan kunci publik yang tersimpan.",
+          },
+        ],
+      };
+      const MODE_LABEL = { register: "Daftar", login: "Masuk" };
+      const STATE_WORD = {
+        pending: "belum",
+        active: "berjalan",
+        done: "selesai",
+        fail: "gagal",
+      };
+
+      // ---------- UI helpers ----------
+      const $ = (id) => document.getElementById(id);
+      const store = {
+        get(k) {
+          try {
+            return localStorage.getItem(k);
+          } catch (_) {
+            return null;
+          }
+        },
+        set(k, v) {
+          try {
+            localStorage.setItem(k, v);
+          } catch (_) {}
+        },
+      };
+      // Tebakan lokal saja: server tetap sumber kebenaran.
+      let ceremony = store.get("wa_registered") ? "login" : "register";
+      let ready = false; // tombol oranye hanya muncul kalau perangkat mendukung
+      let readout = { uv: "–", key: "–" };
+      let support = ["–", "–", "–"]; // diisi checkSupport, tampil di layar saat belum ada upacara
+
+      // Satu status menggerakkan layar, penggaris, dan tombol langkah berikutnya sekaligus.
+      function render({
+        mode,
+        title,
+        desc,
+        flow = ceremony,
+        step = -1,
+        failed = false,
+        done = false,
+      }) {
+        $("lcd").dataset.mode = mode;
+        $("title").textContent = title;
+        $("desc").textContent = desc;
+        // Saat ada upacara: hasilnya. Saat diam: hasil cek perangkat.
+        const inCeremony = step >= 0 || done;
+        const cells = inCeremony
+          ? [
+              ["Upacara", MODE_LABEL[flow]],
+              ["Verifikasi", readout.uv],
+              ["Kunci di", readout.key],
+            ]
+          : [
+              ["HTTPS", support[0]],
+              ["WebAuthn", support[1]],
+              ["Sensor", support[2]],
+            ];
+        cells.forEach(([label, value], i) => {
+          $(`roL${i + 1}`).textContent = label;
+          $(`ro${i + 1}`).textContent = value;
+        });
+
+        const ruler = $("ruler");
+        ruler.innerHTML = "";
+        STEPS[flow].forEach((s, i) => {
+          let state = "pending";
+          if (done || i < step) state = "done";
+          else if (i === step) state = failed ? "fail" : "active";
+          const li = document.createElement("li");
+          li.dataset.s = state;
+          li.style.setProperty("--i", i);
+          li.innerHTML =
+            `<div class="seg"></div><div class="tick"><span></span><span></span><span></span><span></span><span></span></div>` +
+            `<span class="seg-label"><span class="n"></span>` +
+            `<svg class="i mk mk-done" aria-hidden="true"><use href="#i-check"/></svg>` +
+            `<svg class="i mk mk-fail" aria-hidden="true"><use href="#i-x"/></svg></span>` +
+            `<span class="seg-sub"></span>`;
+          li.querySelector(".n").textContent = `${i + 1} ${s.who}`;
+          li.querySelector(".seg-sub").textContent = s.sub;
+          li.setAttribute(
+            "aria-label",
+            `Langkah ${i + 1}, ${s.who}, ${s.sub}: ${STATE_WORD[state]}`,
+          );
+          ruler.append(li);
+        });
+
+        $("registerBtn").classList.toggle(
+          "next",
+          ready && ceremony === "register",
+        );
+        $("loginBtn").classList.toggle("next", ready && ceremony === "login");
+      }
+
+      function stepTo(flow, i) {
+        const s = STEPS[flow][i];
+        if (i === 0) readout = { uv: "–", key: "–" };
+        render({ mode: "run", title: s.title, desc: s.desc, flow, step: i });
+      }
+
+      function idle(title, desc) {
+        render({ mode: "idle", title, desc });
+      }
+
+      function fail(flow, i, err) {
+        render({
+          mode: "fail",
+          title: `Putus di langkah ${i + 1}: ${STEPS[flow][i].who}`,
+          desc: explain(err),
+          flow,
+          step: i,
+          failed: true,
+        });
+      }
+
+      function log(...parts) {
+        const line = parts
+          .map((p) => (typeof p === "string" ? p : JSON.stringify(p, null, 2)))
+          .join(" ");
+        $("log").textContent =
+          `[${new Date().toLocaleTimeString()}] ${line}\n` +
+          $("log").textContent;
+      }
+
+      function busy(on, key) {
+        for (const b of document.querySelectorAll("button.key"))
+          b.disabled = on;
+        if (key) key.toggleAttribute("data-running", on);
+      }
+
+      function setDetails(rows) {
+        const dl = $("details");
+        dl.innerHTML = "";
+        for (const [k, v] of Object.entries(rows)) {
+          const dt = document.createElement("dt");
+          const dd = document.createElement("dd");
+          dt.textContent = k;
+          dd.textContent = v;
+          dl.append(dt, dd);
+        }
+        dl.hidden = false;
+        $("detailsEmpty").hidden = true;
+      }
+
+      async function api(path, body) {
+        const res = await fetch(path, {
+          method: body === undefined ? "GET" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: body === undefined ? undefined : JSON.stringify(body),
+          credentials: "same-origin",
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        return data;
+      }
+
+      // Terjemahkan error browser ke pesan yang bisa ditindaklanjuti.
+      function explain(err) {
+        switch (err.name) {
+          case "NotAllowedError":
+            return "Verifikasi dibatalkan atau waktu habis. Coba lagi.";
+          case "InvalidStateError":
+            return "HP ini sudah terdaftar untuk nama pengguna tersebut. Langsung ke langkah 2: masuk.";
+          case "SecurityError":
+            return "Domain tidak cocok dengan RP ID, atau halaman tidak dibuka lewat HTTPS.";
+          case "NotSupportedError":
+            return "Browser ini tidak mendukung passkey dengan opsi yang diminta.";
+          default:
+            return err.message || String(err);
+        }
+      }
+
+      // ---------- Registrasi ----------
+      async function register() {
+        const input = $("username");
+        const username = input.value.trim();
+        if (!username) {
+          input.setAttribute("aria-invalid", "true");
+          render({
+            mode: "fail",
+            title: "Nama pengguna kosong",
+            desc: "Tulis nama pengguna di langkah 1, lalu tekan Daftarkan HP.",
+            flow: "register",
+          });
+          input.focus();
+          return;
+        }
+        input.removeAttribute("aria-invalid");
+        const key = $("registerBtn");
+        busy(true, key);
+        let step = 0;
+        try {
+          stepTo("register", 0);
+          const options = await api("/api/register/begin", { username });
+          log("register/begin", options);
+
+          const pk = options.publicKey;
+          delete pk.extensions; // PoC ini tidak memakai extension WebAuthn
+          pk.challenge = b64u.toBuf(pk.challenge);
+          pk.user.id = b64u.toBuf(pk.user.id);
+          (pk.excludeCredentials || []).forEach(
+            (c) => (c.id = b64u.toBuf(c.id)),
+          );
+
+          stepTo("register", (step = 1));
+          const cred = await navigator.credentials.create({ publicKey: pk });
+
+          const payload = {
+            id: cred.id,
+            rawId: b64u.fromBuf(cred.rawId),
+            type: cred.type,
+            authenticatorAttachment: cred.authenticatorAttachment,
+            clientExtensionResults: cred.getClientExtensionResults(),
+            response: {
+              clientDataJSON: b64u.fromBuf(cred.response.clientDataJSON),
+              attestationObject: b64u.fromBuf(cred.response.attestationObject),
+              transports: cred.response.getTransports
+                ? cred.response.getTransports()
+                : [],
+            },
+          };
+          stepTo("register", (step = 2));
+          const result = await api("/api/register/finish", payload);
+          log("register/finish", result);
+
+          store.set("wa_registered", "1");
+          ceremony = "login";
+          readout = {
+            uv: result.userVerified ? "Ya" : "Tidak",
+            key: result.backedUp ? "HP+cloud" : "HP ini",
+          };
+          render({
+            mode: "done",
+            title: `Terdaftar sebagai ${result.username}`,
+            desc: "Passkey tersimpan di HP ini dan kunci publiknya di server. Lanjut ke langkah 2: masuk.",
+            flow: "register",
+            done: true,
+          });
+          setDetails({
+            Upacara: "Registrasi",
+            "Credential ID": result.credentialId || "–",
+            "Verifikasi (UV)": result.userVerified ? "Ya" : "Tidak",
+            Dicadangkan: result.backedUp
+              ? "Ya, tersinkron ke akun cloud"
+              : "Tidak, hanya di HP ini",
+            Transport: (result.transports || []).join(", ") || "–",
+          });
+        } catch (err) {
+          log("register error", err.name || "", err.message || "");
+          fail("register", step, err);
+        } finally {
+          busy(false, key);
+        }
+      }
+
+      // ---------- Login ----------
+      async function login() {
+        const key = $("loginBtn");
+        busy(true, key);
+        let step = 0;
+        try {
+          stepTo("login", 0);
+          const options = await api("/api/login/begin", {});
+          log("login/begin", options);
+
+          const pk = options.publicKey;
+          delete pk.extensions;
+          pk.challenge = b64u.toBuf(pk.challenge);
+          (pk.allowCredentials || []).forEach((c) => (c.id = b64u.toBuf(c.id)));
+
+          stepTo("login", (step = 1));
+          const cred = await navigator.credentials.get({ publicKey: pk });
+
+          const payload = {
+            id: cred.id,
+            rawId: b64u.fromBuf(cred.rawId),
+            type: cred.type,
+            authenticatorAttachment: cred.authenticatorAttachment,
+            clientExtensionResults: cred.getClientExtensionResults(),
+            response: {
+              clientDataJSON: b64u.fromBuf(cred.response.clientDataJSON),
+              authenticatorData: b64u.fromBuf(cred.response.authenticatorData),
+              signature: b64u.fromBuf(cred.response.signature),
+              userHandle: b64u.fromBuf(cred.response.userHandle),
+            },
+          };
+          stepTo("login", (step = 2));
+          const result = await api("/api/login/finish", payload);
+          log("login/finish", result);
+
+          store.set("wa_registered", "1");
+          readout = {
+            uv: result.userVerified ? "Ya" : "Tidak",
+            key:
+              cred.authenticatorAttachment === "platform"
+                ? "HP ini"
+                : cred.authenticatorAttachment
+                  ? "Perangkat lain"
+                  : "–",
+          };
+          render({
+            mode: "done",
+            title: "Berhasil masuk",
+            desc: "Server yakin ini kamu: tanda tangan dari HP cocok dengan kunci publik yang tersimpan.",
+            flow: "login",
+            done: true,
+          });
+          showSignedIn(result, cred.authenticatorAttachment);
+          setDetails({
+            Upacara: "Login",
+            "Credential ID": result.credentialId || "–",
+            "Verifikasi (UV)": result.userVerified ? "Ya" : "Tidak",
+            Authenticator: cred.authenticatorAttachment || "–",
+            "Sign count": String(result.signCount ?? "–"),
+            "Passkey terdaftar": String(result.passkeys ?? "–"),
+          });
+        } catch (err) {
+          log("login error", err.name || "", err.message || "");
+          fail("login", step, err);
+        } finally {
+          busy(false, key);
+        }
+      }
+
+      async function logout() {
+        await api("/api/logout", {}).catch(() => {});
+        $("signedIn").hidden = true;
+        $("signedOut").hidden = false;
+        ceremony = "login";
+        idle(
+          "Kamu sudah keluar",
+          "Passkey tetap tersimpan di HP. Tekan Masuk untuk mencoba lagi.",
+        );
+      }
+
+      function showSignedIn(info, attachment) {
+        $("who").textContent = `Masuk sebagai ${info.username}`;
+        const proof = $("proof");
+        proof.innerHTML = "";
+        const add = (ok, text, note) => {
+          const li = document.createElement("li");
+          if (!ok) li.className = "no";
+          li.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${ok ? "check" : "x"}"/></svg><span></span>`;
+          const span = li.querySelector("span");
+          span.textContent = text;
+          if (note) {
+            const small = document.createElement("small");
+            small.textContent = note;
+            span.append(small);
+          }
+          proof.append(li);
+        };
+
+        if (attachment === undefined) {
+          // Dipulihkan dari /api/me: tidak ada data upacara baru untuk dibuktikan.
+          add(
+            true,
+            "Sesi dari login sebelumnya masih aktif",
+            `Akun ini punya ${info.passkeys ?? 0} passkey terdaftar di server.`,
+          );
+        } else {
+          add(
+            true,
+            "Server mengenali passkey ini",
+            "Kunci publiknya tersimpan saat langkah 1.",
+          );
+          add(
+            true,
+            "Tanda tangan dari HP cocok",
+            "Hanya HP yang memegang kunci privat yang bisa membuatnya.",
+          );
+          add(
+            !!info.userVerified,
+            info.userVerified
+              ? "Kamu diverifikasi di HP"
+              : "HP tidak memverifikasi pengguna",
+            "Bisa biometrik, PIN, atau pola. Browser tidak memberi tahu yang mana.",
+          );
+          if (attachment) {
+            const own = attachment === "platform";
+            add(
+              own,
+              own
+                ? "Passkey tersimpan di HP ini"
+                : "Passkey dari perangkat lain",
+              own
+                ? "Memakai sensor bawaan, bukan kunci keamanan eksternal."
+                : "Dipakai lewat perangkat terpisah, misalnya HP lain via QR.",
+            );
+          }
+        }
+        $("signedOut").hidden = true;
+        $("signedIn").hidden = false;
+      }
+
+      // ---------- Deteksi dukungan ----------
+      async function checkSupport() {
+        const checks = [];
+        checks.push(["Koneksi aman (HTTPS)", window.isSecureContext]);
+        const hasApi = !!window.PublicKeyCredential;
+        checks.push(["WebAuthn tersedia", hasApi]);
+
+        let platform = false;
+        if (
+          hasApi &&
+          PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable
+        ) {
+          platform =
+            await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(
+              () => false,
+            );
+        }
+        checks.push(["Sensor verifikasi bawaan", platform]);
+
+        $("checks").innerHTML = "";
+        for (const [label, ok] of checks) {
+          const li = document.createElement("li");
+          li.dataset.led = ok ? "ok" : "bad";
+          li.innerHTML = `<span class="led" aria-hidden="true"></span><span></span><b>${ok ? "Ada" : "Tidak ada"}</b>`;
+          li.children[1].textContent = label;
+          $("checks").append(li);
+        }
+
+        const allOk = checks.every(([, ok]) => ok);
+        ready = allOk;
+        support = checks.map(([, ok]) => (ok ? "Ada" : "Tidak"));
+        $("statusPill").dataset.led = allOk ? "ok" : "bad";
+        $("statusText").textContent = allOk ? "Ready" : "Not ready";
+
+        const notReady = (title, desc) => render({ mode: "fail", title, desc });
+        if (!window.isSecureContext)
+          return notReady(
+            "Butuh HTTPS",
+            "Buka halaman ini lewat tunnel HTTPS agar passkey bisa dipakai. Caranya ada di README.",
+          );
+        if (!hasApi)
+          return notReady(
+            "WebAuthn tidak ada",
+            "Browser ini belum mendukung WebAuthn. Coba Safari (iOS) atau Chrome (Android).",
+          );
+        if (!platform)
+          return notReady(
+            "Sensor belum aktif",
+            "Aktifkan kunci layar dan biometrik di pengaturan HP, lalu muat ulang halaman.",
+          );
+        if (ceremony === "login")
+          idle(
+            "HP ini pernah terdaftar",
+            "Lanjut ke langkah 2: masuk. Kalau server baru di-restart, daftar ulang di langkah 1.",
+          );
+        else
+          idle(
+            "Siap dipakai",
+            "Mulai dari langkah 1: daftarkan HP ini. Sudah pernah daftar? Langsung ke langkah 2.",
+          );
+      }
+
+      $("rpid").textContent = location.hostname;
+      $("registerBtn").addEventListener("click", register);
+      $("loginBtn").addEventListener("click", login);
+      $("logoutBtn").addEventListener("click", logout);
+      $("username").addEventListener("input", (e) =>
+        e.target.removeAttribute("aria-invalid"),
+      );
+      $("statusPill").addEventListener("click", () => {
+        const svc = $("service");
+        svc.open = true;
+        svc.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      (async () => {
+        render({
+          mode: "idle",
+          title: "Memeriksa perangkat…",
+          desc: "Mengecek HTTPS, dukungan WebAuthn, dan sensor bawaan HP.",
+        });
+        await checkSupport();
+        try {
+          const me = await api("/api/me");
+          showSignedIn(me);
+          render({
+            mode: "done",
+            title: `Sesi ${me.username} masih aktif`,
+            desc: "Kamu sudah masuk sebelumnya. Tekan Keluar untuk mencoba alur dari awal.",
+            flow: "login",
+            done: true,
+          });
+        } catch (_) {
+          /* belum login */
+        }
+      })();
+    </script>
+  </body>
+</html>
